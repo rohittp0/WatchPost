@@ -36,12 +36,8 @@ jobs:
           git_diff=$(git diff $old_commit HEAD)
           echo "git_diff=$git_diff" >> $GITHUB_OUTPUT
 
-      - uses: rbreich/curl@v7  # Install curl for API call
-        with:
-          args: |-
-            -X POST
-            -H "Authorization: token ${{ secrets.API_KEY }}"
-            -d "description=$(cat description.txt)"  # Include description from file
-            -d "diff=${{ steps.check-diff.outputs.git_diff }}"  # Diff data from previous step
-            ${{ env.API_URL }}
-      
+      - run: |
+          curl -X POST -H "Authorization: token ${{ secrets.API_KEY }}" \
+              -d "description=$(cat description.txt)" \
+              -d "diff=${{ steps.check-diff.outputs.git_diff }}" \
+              ${{ env.API_URL }}
