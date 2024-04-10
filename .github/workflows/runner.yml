@@ -3,6 +3,7 @@ name: Daily Diff
 on:
   schedule:
     - cron: '0 0 * * *'  # Runs at midnight every day (change cron for different timings)
+  workflow_dispatch:
 
 jobs:
   check-diff:
