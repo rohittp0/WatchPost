@@ -1,0 +1,47 @@
+name: Daily Diff
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs at midnight every day (change cron for different timings)
+  workflow_dispatch:
+
+jobs:
+  check-diff:
+    strategy:
+      matrix:
+        repo: ["rohittp0/AutoREPL"]
+        
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with: 
+          repository: ${{ matrix.repo }}
+          token: ${{ secrets.PA_TOKEN }}
+
+      - name: Get Repository Description
+        run: |
+          curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" | jq -r '.description'  > description.txt
+
+      - run: |  # Find the first commit hash within the last 24 hours
+          git fetch --depth=1
+          yesterday=$(date --date="now - 1 day" +'%Y-%m-%d')
+          old_commit=$(git rev-list --since="$yesterday_cutoff" HEAD^1)
+          if [ -z "$old_commit" ]; then
+            echo "No commits found within the last 24 hours."
+            exit 0
+          fi
+          echo "old_commit=$old_commit" >> $GITHUB_OUTPUT
+
+      - run: |  # Get the diff between HEAD and the old commit
+          git_diff=$(git diff $old_commit HEAD)
+          echo "git_diff=$git_diff" >> $GITHUB_OUTPUT
+
+      - uses: rbreich/curl@v7  # Install curl for API call
+        with:
+          args: |-
+            -X POST
+            -H "Authorization: token ${{ secrets.API_KEY }}"
+            -d "description=$(cat description.txt)"  # Include description from file
+            -d "diff=${{ steps.check-diff.outputs.git_diff }}"  # Diff data from previous step
+            ${{ env.API_URL }}
+      
