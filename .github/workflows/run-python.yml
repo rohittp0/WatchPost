@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - "*"
-    paths:
-      - 'diffs/*'
-    tags-ignore:
-      - "*"
+
+permissions:
+  contents: write
 
 jobs:
   run-python-script:
+
     runs-on: ubuntu-latest
 
     steps:
@@ -46,3 +46,11 @@ jobs:
         run: |
           curl -X POST -H 'Content-type: application/json' \ 
           --data @slack.json ${{ secrets.SLACK_NOTIFICATIONS_TOKEN }}
+
+      - name: Commit and push changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git commit -m "Created Post"
+          git push 
