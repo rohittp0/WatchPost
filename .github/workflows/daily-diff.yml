@@ -32,7 +32,7 @@ jobs:
         run: |
           cd host
           git fetch origin ${{ matrix.repo }}
-          git checkout -b ${{ matrix.repo }} || git checkout ${{ matrix.repo }}
+          git switch ${{ matrix.repo }} || git switch -c ${{ matrix.repo }}
           mkdir -p diffs
 
       - name: Get Repository Description
