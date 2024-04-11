@@ -26,12 +26,12 @@ jobs:
         with:
           repository: ${{ matrix.repo }}
           path: guest
-          fetch-depth: 0 
+          fetch-depth: 0
 
       - name: Setup Repository Environment
         run: |
           cd host
-          git checkout -b ${{ matrix.repo }} || git checkout ${{ matrix.repo }}
+          git checkout -b ${{ matrix.repo }} || git checkout ${{ matrix.repo }} && git pull
           mkdir diffs
 
       - name: Get Repository Description
