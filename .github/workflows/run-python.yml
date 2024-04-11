@@ -3,10 +3,7 @@ name: Python Script Runner
 on:
   push:
     paths:
-      - 'diffs/**'
-  pull_request:
-    paths:
-      - 'diffs/**'
+      - 'diffs/*.txt'
 
 jobs:
   run-python-script:
