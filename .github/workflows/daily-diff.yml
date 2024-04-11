@@ -5,6 +5,9 @@ on:
     - cron: '0 0 * * *'  # Runs at midnight every day (change cron for different timings)
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   check-diff:
     strategy:
@@ -53,6 +56,7 @@ jobs:
 
       - name: Commit and Push Changes
         run: |
+          cd host
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add .
