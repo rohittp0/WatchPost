@@ -29,6 +29,7 @@ jobs:
         run: |
           cd host
           git checkout -b ${{ matrix.repo }} || git checkout ${{ matrix.repo }}
+          mkdir diffs
 
       - name: Get Repository Description
         run: curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" | jq -r '.description' > host/description.txt
@@ -46,9 +47,9 @@ jobs:
 
       - name: Get Git Diff
         run: |
-          cd host
-          DIFF_INDEX=$(ls diffs | wc -l)
-          git diff $FIRST_COMMIT HEAD > diffs/${DIFF_INDEX}.txt
+          cd guest
+          DIFF_INDEX=$(ls ../host/diffs | wc -l)
+          git diff $FIRST_COMMIT HEAD > ../host/diffs/${DIFF_INDEX}.txt
 
       - name: Commit and Push Changes
         run: |
