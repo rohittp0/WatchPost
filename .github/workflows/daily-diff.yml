@@ -31,7 +31,7 @@ jobs:
       - name: Setup Repository Environment
         run: |
           cd host
-          git fetch origin ${{ matrix.repo }}
+          git fetch origin ${{ matrix.repo }} || echo "No remote branch found."
           git switch ${{ matrix.repo }} || git switch -c ${{ matrix.repo }}
           mkdir -p diffs
 
