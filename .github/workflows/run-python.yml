@@ -39,11 +39,10 @@ jobs:
         run: python main.py
       
       - name: Get Output File
+        shell: bash
         run: |
-            POST_INDEX=$(ls posts -l | wc -l)
-            POST="$(cat 'posts/${POST_INDEX}.md')"
+            POST="$(cat 'posts/next.md')"
             REPO=$(cat repo.json | jq -r '.full_name')
-            echo "POST_INDEX=$POST_INDEX" >> $GITHUB_ENV
             echo "POST=$POST" >> $GITHUB_ENV
             echo "REPO=$REPO" >> $GITHUB_ENV
       
@@ -69,7 +68,7 @@ jobs:
                     "type": "plain_text",
                     "text": "View on :github:"
                   },
-                  "url": "${{ github.server_url }}/${{ github.repository }}/blob/${REPO}/posts/${POST_INDEX}.md"
+                  "url": "${{ github.server_url }}/${{ github.repository }}/blob/${REPO}/posts/next.md"
                 }
               ]
             }
