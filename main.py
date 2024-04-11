@@ -35,7 +35,7 @@ def get_prompt(init_data):
         diff=init_data["diff"],
         project_description=CONFIG["repo"]["description"],
         repo_url=CONFIG["repo"]["html_url"],
-        previous_post=init_data["previous_post"],
+        previous_post=init_data["previous_post"] or "No previous post",
     )
 
 
