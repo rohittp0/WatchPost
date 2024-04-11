@@ -3,7 +3,9 @@ name: Python Script Runner
 on:
   push:
     branches:
-      - "*"
+      - "**"
+    paths:
+      - "diffs/**/*"
 
 permissions:
   contents: write
