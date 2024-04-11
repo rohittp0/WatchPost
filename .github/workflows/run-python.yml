@@ -46,8 +46,7 @@ jobs:
 
       - name: Notify Slack
         run: |
-          curl -X POST -H 'Content-type: application/json' \ 
-          --data @slack.json ${{ secrets.SLACK_NOTIFICATIONS_TOKEN }}
+          curl -X POST -H 'Content-type: application/json' -d @slack.json ${{ secrets.SLACK_WEBHOOK_URL }}
 
       - name: Commit and push changes
         run: |
