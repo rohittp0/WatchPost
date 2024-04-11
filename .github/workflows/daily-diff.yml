@@ -10,34 +10,50 @@ jobs:
     strategy:
       matrix:
         repo: ["rohittp0/AutoREPL"]
-        
+
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with: 
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: host
+
+      - name: Checkout ${{ matrix.repo }}
+        uses: actions/checkout@v4
+        with:
           repository: ${{ matrix.repo }}
-          token: ${{ secrets.PA_TOKEN }}
+          path: guest
+          # token: ${{ secrets.PA_TOKEN }}  # Uncomment and configure in GitHub secrets to use private repositories
+
+      - name: Setup Repository Environment
+        run: |
+          cd host
+          git checkout -b ${{ matrix.repo }} || git checkout ${{ matrix.repo }}
 
       - name: Get Repository Description
+        run: curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" | jq -r '.description' > host/description.txt
+
+      - name: Find First Commit in Last 24 Hours
+        id: find-commit
         run: |
-          curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" | jq -r '.description'  > description.txt
-
-      - run: |  # Find the first commit hash within the last 24 hours
-          git fetch --depth=1
-          yesterday=$(date --date="now - 1 day" +'%Y-%m-%d')
-          old_commit=$(git rev-list --since="$yesterday_cutoff" HEAD^1)
-          if [ -z "$old_commit" ]; then
-            echo "No commits found within the last 24 hours."
-            exit 0
+          cd guest
+          FIRST_COMMIT=$(git rev-list --since="1 day ago" HEAD | tail -n 1)
+          if [ -z "$FIRST_COMMIT" ]; then
+            echo "No commits in the last 24 hours."
+            exit 0  # Exit the workflow successfully without error
           fi
-          echo "old_commit=$old_commit" >> $GITHUB_OUTPUT
+          echo "FIRST_COMMIT=$FIRST_COMMIT" >> $GITHUB_ENV
 
-      - run: |  # Get the diff between HEAD and the old commit
-          git_diff=$(git diff $old_commit HEAD)
-          echo "git_diff=$git_diff" >> $GITHUB_OUTPUT
+      - name: Get Git Diff
+        run: |
+          cd ../host  # Ensure we are in the correct directory (host) to execute diff
+          DIFF_INDEX=$(ls diffs | wc -l)
+          git diff $FIRST_COMMIT HEAD > diffs/${DIFF_INDEX}.txt
 
-      - run: |
-          curl -X POST -H "Authorization: token ${{ secrets.API_KEY }}" \
-              -d "description=$(cat description.txt)" \
-              -d "diff=${{ steps.check-diff.outputs.git_diff }}" \
-              ${{ env.API_URL }}
+      - name: Commit and Push Changes
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git commit -m "Update diffs for ${{ matrix.repo }} at $(date)"
+          git push -u origin ${{ matrix.repo }}
