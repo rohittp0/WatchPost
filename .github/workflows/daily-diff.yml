@@ -35,7 +35,7 @@ jobs:
           mkdir diffs
 
       - name: Get Repository Description
-        run: curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" | jq -r '.description' > host/description.txt
+        run: curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" > host/repo.json
 
       - name: Find First Commit in Last 24 Hours
         id: find-commit
@@ -51,8 +51,8 @@ jobs:
       - name: Get Git Diff
         run: |
           cd guest
-          DIFF_INDEX=$(ls ../host/diffs | wc -l)
-          git diff $FIRST_COMMIT HEAD > ../host/diffs/${DIFF_INDEX}.txt
+          DIFF_INDEX=$(ls ../host/diffs -l | wc -l)
+          git diff "${FIRST_COMMIT}^1" HEAD > ../host/diffs/${DIFF_INDEX}.txt
 
       - name: Commit and Push Changes
         run: |
