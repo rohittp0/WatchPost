@@ -20,6 +20,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: host
+        env:
+            GITHUB_TOKEN: ${{ secrets.PAT }}
 
       - name: Checkout ${{ matrix.repo }}
         uses: actions/checkout@v4
