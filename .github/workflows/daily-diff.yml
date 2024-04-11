@@ -8,11 +8,26 @@ on:
 permissions:
   contents: write
 
+env:
+    REPOS: ${{ vars.REPOS }}
+
 jobs:
+  prepare-matrix:
+    name: Get Repositories List
+    runs-on: ubuntu-latest
+    outputs:
+      repos: ${{ steps.step1.outputs.matrix }}
+    steps:
+      - name: Create Matrix Variable
+        id: step1
+        run: echo "matrix=${{env.REPOS}}" >> $GITHUB_OUTPUT
+
   check-diff:
+    name: Check Diff
+    needs: [prepare-matrix]
     strategy:
       matrix:
-        repo: ["rohittp0/AutoREPL"]
+        repo:  ${{ fromJSON(needs.prepare-matrix.outputs.repos) }}
 
     runs-on: ubuntu-latest
     steps:

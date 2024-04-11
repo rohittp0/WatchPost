@@ -21,7 +21,7 @@ def to_slack_json(post: str, post_id: int, repo: str, base_repo: str):
                             "type": "plain_text",
                             "text": "View on Github"
                         },
-                        "url": f"{base_repo}{repo}/posts/${post_id}.md"
+                        "url": f"{base_repo}{repo}/posts/{post_id}.md"
                     }
                 ]
             }
