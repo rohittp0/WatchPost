@@ -2,8 +2,12 @@ name: Python Script Runner
 
 on:
   push:
+    branches:
+      - "*"
     paths:
-      - 'diffs/*.txt'
+      - 'diffs/*'
+    tags-ignore:
+      - "*"
 
 jobs:
   run-python-script:
