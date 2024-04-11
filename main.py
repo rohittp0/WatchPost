@@ -21,7 +21,7 @@ def main():
         post,
         post_index,
         repo["full_name"],
-        os.environ.get("CURRENT_REPO_URL")
+        os.environ["CURRENT_REPO_URL"]
     )
 
     json.dump(post_json, open("slack.json", "w", encoding="utf-8"), ensure_ascii=False)

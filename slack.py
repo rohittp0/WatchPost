@@ -10,13 +10,16 @@ def to_slack_json(post: str, post_id: int, repo: str, base_repo: str):
                 }
             },
             {
+                "type": "divider"
+            },
+            {
                 "type": "actions",
                 "elements": [
                     {
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": "View on :github:"
+                            "text": "View on Github"
                         },
                         "url": f"{base_repo}{repo}/posts/${post_id}.md"
                     }
