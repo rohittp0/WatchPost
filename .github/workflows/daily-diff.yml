@@ -31,8 +31,9 @@ jobs:
       - name: Setup Repository Environment
         run: |
           cd host
-          git checkout -b ${{ matrix.repo }} || git checkout ${{ matrix.repo }} && git pull
-          mkdir diffs
+          git fetch origin ${{ matrix.repo }}
+          git checkout -b ${{ matrix.repo }} || git checkout ${{ matrix.repo }}
+          mkdir -p diffs
 
       - name: Get Repository Description
         run: curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" > host/repo.json
