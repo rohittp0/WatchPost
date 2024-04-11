@@ -52,7 +52,7 @@ jobs:
         run: |
           cd guest
           DIFF_INDEX=$(ls ../host/diffs -l | wc -l)
-          git diff "${FIRST_COMMIT}^1" HEAD > ../host/diffs/${DIFF_INDEX}.txt
+          git diff "${FIRST_COMMIT}^1" HEAD -- > ../host/diffs/${DIFF_INDEX}.txt
 
       - name: Commit and Push Changes
         run: |
