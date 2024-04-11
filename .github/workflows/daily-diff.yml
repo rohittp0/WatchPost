@@ -26,7 +26,7 @@ jobs:
         with:
           repository: ${{ matrix.repo }}
           path: guest
-          # token: ${{ secrets.PA_TOKEN }}  # Uncomment and configure in GitHub secrets to use private repositories
+          fetch-depth: 0 
 
       - name: Setup Repository Environment
         run: |
@@ -48,11 +48,18 @@ jobs:
           fi
           echo "FIRST_COMMIT=$FIRST_COMMIT" >> $GITHUB_ENV
 
-      - name: Get Git Diff
-        run: |
-          cd guest
-          DIFF_INDEX=$(ls ../host/diffs -l | wc -l)
-          git diff "${FIRST_COMMIT}^1" HEAD -- > ../host/diffs/${DIFF_INDEX}.txt
+          - name: Get Git Diff
+          run: |
+            cd guest
+            DIFF_INDEX=$(ls ../host/diffs -l | wc -l)
+            if git rev-parse --quiet --verify "${FIRST_COMMIT}^1"; then
+              # If parent commit exists, diff against it
+              git diff "${FIRST_COMMIT}^1" HEAD -- > ../host/diffs/${DIFF_INDEX}.txt
+            else
+              # If no parent commit (first commit), just show the current state as the diff
+              git show "${FIRST_COMMIT}" > ../host/diffs/${DIFF_INDEX}.txt
+            fi
+          shell: /usr/bin/bash -e {0}
 
       - name: Commit and Push Changes
         run: |
