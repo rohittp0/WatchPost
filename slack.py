@@ -4,8 +4,16 @@ from pathlib import Path
 
 def to_slack_json(post: str, post_file: Path, repo: str, base_repo: str):
     return {
-        "text": f"WatchPost Daily Update for {repo}",
+        "text": post,
         "blocks": [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": f"Daily Update for {repo}",
+                    "emoji": True
+                }
+            },
             {
                 "type": "section",
                 "text": {
