@@ -46,7 +46,7 @@ jobs:
 
       - name: Get Git Diff
         run: |
-          cd ../host  # Ensure we are in the correct directory (host) to execute diff
+          cd host
           DIFF_INDEX=$(ls diffs | wc -l)
           git diff $FIRST_COMMIT HEAD > diffs/${DIFF_INDEX}.txt
 
