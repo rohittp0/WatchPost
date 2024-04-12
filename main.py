@@ -2,6 +2,7 @@ from openai import OpenAI
 
 from config import CONFIG
 from slack import to_slack_json, write_to_file
+from telegram import to_telegram_json
 
 
 def init():
@@ -62,7 +63,16 @@ def main():
         CONFIG["base_repo_url"]
     )
 
+    telegram_json = to_telegram_json(
+        content,
+        init_data["post"],
+        CONFIG["repo"]["full_name"],
+        CONFIG["base_repo_url"],
+        CONFIG["telegram_chat_id"]
+    )
+
     write_to_file(CONFIG["slack_file"], slack_json)
+    write_to_file(CONFIG["telegram_file"], telegram_json)
 
 
 if __name__ == "__main__":
