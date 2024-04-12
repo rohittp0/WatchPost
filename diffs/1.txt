@@ -1,0 +1,28 @@
+diff --git a/models/gpt.py b/models/gpt.py
+index a416678..f2c1fee 100644
+--- a/models/gpt.py
++++ b/models/gpt.py
+@@ -25,4 +25,4 @@ class GPT(Model):
+             messages=messages
+         )
+ 
+-        return response["choices"][0]["message"]["content"]
++        return response.choices[0].message.content
+diff --git a/tests/gpt_test.py b/tests/gpt_test.py
+new file mode 100644
+index 0000000..0111990
+--- /dev/null
++++ b/tests/gpt_test.py
+@@ -0,0 +1,12 @@
++from models.gpt import GPT
++
++
++def returns_response():
++    gpt = GPT(True)
++    response = gpt.query("Hello, how are you?", "")
++
++    assert response is not None
++
++
++if __name__ == "__main__":
++    returns_response()
