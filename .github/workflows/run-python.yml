@@ -43,10 +43,7 @@ jobs:
         env:
           CURRENT_REPO_URL: "${{ github.server_url }}/${{ github.repository }}/blob/"
           OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
-
-      - name: Notify Slack
-        run: |
-          curl -X POST -H 'Content-type: application/json' -d @slack.json ${{ secrets.SLACK_WEBHOOK_URL }}
+          TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID }}
 
       - name: Commit and push changes
         run: |
@@ -55,3 +52,13 @@ jobs:
           git add .
           git commit -m "Created Post"
           git push 
+
+      - name: Notify Slack
+        if: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' -d @slack.json ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Telegram
+        if: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' -d @telegram.json https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
