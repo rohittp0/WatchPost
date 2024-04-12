@@ -1,0 +1,32 @@
+name: Update Branches
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-branches:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get branch names
+        id: branches
+        run: |
+          git ls-remote --heads origin | awk -F'/' '{print $3}' | grep -vE '^(main|legacy)$' > ${{ github.workspace }}/branches.txt
+
+      - name: Update branches
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          
+          while read -r branch; do
+            git checkout $branch
+            git merge origin/main --no-edit
+            git push origin $branch
+          done < ${{ github.workspace }}/branches.txt
