@@ -1,0 +1,540 @@
+diff --git a/.github/workflows/daily-diff.yml b/.github/workflows/daily-diff.yml
+index e3059d1..cc9d201 100644
+--- a/.github/workflows/daily-diff.yml
++++ b/.github/workflows/daily-diff.yml
+@@ -5,39 +5,83 @@ on:
+     - cron: '0 0 * * *'  # Runs at midnight every day (change cron for different timings)
+   workflow_dispatch:
+ 
++permissions:
++  contents: write
++
++env:
++    REPOS: ${{ vars.REPOS }}
++
+ jobs:
++  prepare-matrix:
++    name: Get Repositories List
++    runs-on: ubuntu-latest
++    outputs:
++      repos: ${{ steps.step1.outputs.matrix }}
++    steps:
++      - name: Create Matrix Variable
++        id: step1
++        run: echo "matrix=${{env.REPOS}}" >> $GITHUB_OUTPUT
++
+   check-diff:
++    name: Check Diff
++    needs: [prepare-matrix]
+     strategy:
+       matrix:
+-        repo: ["rohittp0/AutoREPL"]
+-        
++        repo:  ${{ fromJSON(needs.prepare-matrix.outputs.repos) }}
++
+     runs-on: ubuntu-latest
+     steps:
+-      - uses: actions/checkout@v3
+-        with: 
++      - name: Checkout
++        uses: actions/checkout@v4
++        with:
++          path: host
++          persist-credentials: false
++
++      - name: Checkout ${{ matrix.repo }}
++        uses: actions/checkout@v4
++        with:
+           repository: ${{ matrix.repo }}
+-          token: ${{ secrets.PA_TOKEN }}
++          path: guest
++          fetch-depth: 0
++
++      - name: Setup Repository Environment
++        run: |
++          cd host
++          git fetch origin ${{ matrix.repo }} || echo "No remote branch found."
++          git switch ${{ matrix.repo }} || git switch -c ${{ matrix.repo }}
++          mkdir -p diffs
+ 
+       - name: Get Repository Description
++        run: curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" > host/repo.json
++
++      - name: Find First Commit in Last 24 Hours
++        id: find-commit
+         run: |
+-          curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" | jq -r '.description'  > description.txt
+-
+-      - run: |  # Find the first commit hash within the last 24 hours
+-          git fetch --depth=1
+-          yesterday=$(date --date="now - 1 day" +'%Y-%m-%d')
+-          old_commit=$(git rev-list --since="$yesterday_cutoff" HEAD^1)
+-          if [ -z "$old_commit" ]; then
+-            echo "No commits found within the last 24 hours."
+-            exit 0
++          cd guest
++          FIRST_COMMIT=$(git rev-list --since="1 day ago" HEAD | tail -n 1)
++          if [ -z "$FIRST_COMMIT" ]; then
++            echo "No commits in the last 24 hours."
++            exit 0  # Exit the workflow successfully without error
+           fi
+-          echo "old_commit=$old_commit" >> $GITHUB_OUTPUT
++          echo "FIRST_COMMIT=$FIRST_COMMIT" >> $GITHUB_ENV
+ 
+-      - run: |  # Get the diff between HEAD and the old commit
+-          git_diff=$(git diff $old_commit HEAD)
+-          echo "git_diff=$git_diff" >> $GITHUB_OUTPUT
++      - name: Get Git Diff
++        run: |
++          cd guest
++          DIFF_INDEX=$(ls ../host/diffs -l | wc -l)
++          if git rev-parse --quiet --verify "${FIRST_COMMIT}^1"; then
++            git diff "${FIRST_COMMIT}^1" HEAD -- > ../host/diffs/${DIFF_INDEX}.txt
++          else
++            git show "${FIRST_COMMIT}" > ../host/diffs/${DIFF_INDEX}.txt
++          fi
++        shell: /usr/bin/bash -e {0}
+ 
+-      - run: |
+-          curl -X POST -H "Authorization: token ${{ secrets.API_KEY }}" \
+-              -d "description=$(cat description.txt)" \
+-              -d "diff=${{ steps.check-diff.outputs.git_diff }}" \
+-              ${{ env.API_URL }}
++      - name: Commit and Push Changes
++        run: |
++          cd host
++          git config user.name github-actions
++          git config user.email github-actions@github.com
++          git add .
++          git commit -m "Update diffs for ${{ matrix.repo }} at $(date)"
++          git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
++          git push -u origin ${{ matrix.repo }}
+diff --git a/.github/workflows/run-python.yml b/.github/workflows/run-python.yml
+new file mode 100644
+index 0000000..28ee4f2
+--- /dev/null
++++ b/.github/workflows/run-python.yml
+@@ -0,0 +1,57 @@
++name: Python Script Runner
++
++on:
++  push:
++    branches:
++      - "**"
++    paths:
++      - "diffs/**/*"
++
++permissions:
++  contents: write
++
++jobs:
++  run-python-script:
++
++    runs-on: ubuntu-latest
++
++    steps:
++      - name: Checkout code
++        uses: actions/checkout@v4
++
++      - name: Set up Python
++        uses: actions/setup-python@v4
++        with:
++          python-version: '3.12'
++
++      - name: Cache Python dependencies
++        uses: actions/cache@v4
++        with:
++          path: ~/.cache/pip
++          save-always: true
++          key: "${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}"
++          restore-keys: |
++            ${{ runner.os }}-pip-
++
++      - name: Install dependencies
++        run: |
++          python -m pip install --upgrade pip
++          pip install -r requirements.txt
++
++      - name: Run script
++        run: python main.py
++        env:
++          CURRENT_REPO_URL: "${{ github.server_url }}/${{ github.repository }}/blob/"
++          OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
++
++      - name: Notify Slack
++        run: |
++          curl -X POST -H 'Content-type: application/json' -d @slack.json ${{ secrets.SLACK_WEBHOOK_URL }}
++
++      - name: Commit and push changes
++        run: |
++          git config user.name github-actions
++          git config user.email github-actions@github.com
++          git add .
++          git commit -m "Created Post"
++          git push 
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..295e2ab
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,155 @@
++# Byte-compiled / optimized / DLL files
++__pycache__/
++*.py[cod]
++*$py.class
++
++# C extensions
++*.so
++
++# Distribution / packaging
++.Python
++build/
++develop-eggs/
++dist/
++downloads/
++eggs/
++.eggs/
++lib/
++lib64/
++parts/
++sdist/
++var/
++wheels/
++share/python-wheels/
++*.egg-info/
++.installed.cfg
++*.egg
++MANIFEST
++
++# PyInstaller
++#  Usually these files are written by a python script from a template
++#  before PyInstaller builds the exe, so as to inject date/other infos into it.
++*.manifest
++*.spec
++
++# Installer logs
++pip-log.txt
++pip-delete-this-directory.txt
++
++# Unit test / coverage reports
++htmlcov/
++.tox/
++.nox/
++.coverage
++.coverage.*
++.cache
++nosetests.xml
++coverage.xml
++*.cover
++*.py,cover
++.hypothesis/
++.pytest_cache/
++cover/
++
++# Translations
++*.mo
++*.pot
++
++# Django stuff:
++*.log
++local_settings.py
++db.sqlite3
++db.sqlite3-journal
++
++# Flask stuff:
++instance/
++.webassets-cache
++
++# Scrapy stuff:
++.scrapy
++
++# Sphinx documentation
++docs/_build/
++
++# PyBuilder
++.pybuilder/
++target/
++
++# Jupyter Notebook
++.ipynb_checkpoints
++
++# IPython
++profile_default/
++ipython_config.py
++
++# pyenv
++#   For a library or package, you might want to ignore these files since the code is
++#   intended to run in multiple environments; otherwise, check them in:
++# .python-version
++
++# pipenv
++#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
++#   However, in case of collaboration, if having platform-specific dependencies or dependencies
++#   having no cross-platform support, pipenv may install dependencies that don't work, or not
++#   install all needed dependencies.
++#Pipfile.lock
++
++# poetry
++#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
++#   This is especially recommended for binary packages to ensure reproducibility, and is more
++#   commonly ignored for libraries.
++#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
++#poetry.lock
++
++# pdm
++#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
++#pdm.lock
++#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
++#   in version control.
++#   https://pdm.fming.dev/#use-with-ide
++.pdm.toml
++
++# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
++__pypackages__/
++
++# Celery stuff
++celerybeat-schedule
++celerybeat.pid
++
++# SageMath parsed files
++*.sage.py
++
++# Environments
++.env
++.venv
++env/
++venv/
++ENV/
++env.bak/
++venv.bak/
++
++# Spyder project settings
++.spyderproject
++.spyproject
++
++# Rope project settings
++.ropeproject
++
++# mkdocs documentation
++/site
++
++# mypy
++.mypy_cache/
++.dmypy.json
++dmypy.json
++
++# Pyre type checker
++.pyre/
++
++# pytype static type analyzer
++.pytype/
++
++# Cython debug symbols
++cython_debug/
++
++.idea/
+\ No newline at end of file
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..7b3674a
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,7 @@
++# WatchPost
++WatchPost is a LinkedIn post automation tool that leverages GitHub repository activity to generate daily content updates. It uses GitHub Actions to fetch the git diff of specified repositories, comparing the current state to that of 24 hours ago. This diff is then used as a prompt for GPT (Generative Pre-trained Transformer) to create engaging LinkedIn posts about the project's progress.
++
++## Features
++- **Automated Post Creation**: Utilizes OpenAI's GPT to generate LinkedIn posts based on recent changes in your GitHub repositories.
++- **GitHub Integration**: Tracks changes across multiple repositories using GitHub Actions.
++- **Customizable Templates**: Comes with predefined templates in config.py for the first post and subsequent updates, which you can customize as needed.
+diff --git a/config.py b/config.py
+new file mode 100644
+index 0000000..7b4c8c1
+--- /dev/null
++++ b/config.py
+@@ -0,0 +1,51 @@
++import json
++import os
++from pathlib import Path
++
++FIRST_POST_TEMPLATE = """\
++This is the first post in a series of posts that I will be posting on LinkedIn about the project. \
++Include what the project is and what I have done so far ( based on diff and project description ).
++"""
++
++NEXT_POST_TEMPLATE = """\
++This is the next post in a series of posts that I will be posting on LinkedIn about the project. \
++Include what I have done since the last post ( based on diff ).
++"""
++
++PROMPT_TEMPLATE = """\
++Create a LinkedIn post based on the following git diff. Make the post engaging and fun to read. \
++{post_description}
++
++{diff}
++
++Context
++=======
++
++Project Description: {project_description}
++Github Repo: {repo_url}
++Previous Post: {previous_post}
++"""
++
++SYSTEM_MESSAGE = """\
++You are a LinkedIn content creator AI. You have to create a LinkedIn post based on the given prompt. \
++Make sure the post is engaging and fun to read, while also being semi-formal. \
++Make sure to include Github repo link in the post directly as text link. \
++Do not directly quote the git diff, write based on it. \
++In the first post include an explanation about the project based on the project description. \
++If this is not the first post, previous post will be included in the context, use that to maintain continuity.\
++The response created should be in plain text format so that it can be easily copied and pasted to LinkedIn post.\
++"""
++
++CONFIG = {
++    "posts_folder": Path("posts"),
++    "diffs_folder": Path("diffs"),
++    "repo": json.load(open("repo.json", "r")),
++    "slack_file": "slack.json",
++    "first_post_template": FIRST_POST_TEMPLATE,
++    "next_post_template": NEXT_POST_TEMPLATE,
++    "prompt_template": PROMPT_TEMPLATE,
++    "system_message": SYSTEM_MESSAGE,
++    "base_repo_url": os.environ["CURRENT_REPO_URL"],
++    "open_ai_key": os.environ["OPEN_AI_API_KEY"],
++    "openai_model": os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
++}
+diff --git a/main.py b/main.py
+new file mode 100644
+index 0000000..0647519
+--- /dev/null
++++ b/main.py
+@@ -0,0 +1,69 @@
++from openai import OpenAI
++
++from config import CONFIG
++from slack import to_slack_json, write_to_file
++
++
++def init():
++    CONFIG["posts_folder"].mkdir(exist_ok=True)
++
++    diff_index = len([*CONFIG["diffs_folder"].iterdir()])
++    diff_file = CONFIG["diffs_folder"] / f"{diff_index}.txt"
++
++    post_index = len([*CONFIG["posts_folder"].iterdir()]) + 1
++    post_file = CONFIG["posts_folder"] / f"{post_index}.md"
++    previous_post_file = CONFIG["posts_folder"] / f"{post_index - 1}.md"
++
++    diff = diff_file.read_text(encoding="utf-8")
++    previous_post = previous_post_file.read_text(encoding="utf-8") if previous_post_file.exists() else None
++
++    return {
++        "diff": diff,
++        "previous_post": previous_post,
++        "post": post_file,
++    }
++
++
++def get_prompt(init_data):
++    if init_data["previous_post"]:
++        post_description = CONFIG["next_post_template"]
++    else:
++        post_description = CONFIG["first_post_template"]
++
++    return CONFIG["prompt_template"].format(
++        post_description=post_description,
++        diff=init_data["diff"],
++        project_description=CONFIG["repo"]["description"],
++        repo_url=CONFIG["repo"]["html_url"],
++        previous_post=init_data["previous_post"] or "No previous post",
++    )
++
++
++def main():
++    init_data = init()
++    prompt = get_prompt(init_data)
++
++    client = OpenAI(api_key=CONFIG["open_ai_key"])
++    response = client.chat.completions.create(
++        model=CONFIG["openai_model"],
++        messages=[
++            {"role": "system", "content": CONFIG["system_message"]},
++            {"role": "user", "content": prompt},
++        ]
++    )
++
++    content = response.choices[0].message.content
++    init_data["post"].write_text(content, encoding="utf-8")
++
++    slack_json = to_slack_json(
++        content,
++        init_data["post"],
++        CONFIG["repo"]["full_name"],
++        CONFIG["base_repo_url"]
++    )
++
++    write_to_file(CONFIG["slack_file"], slack_json)
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+index 0000000..4153b91
+--- /dev/null
++++ b/requirements.txt
+@@ -0,0 +1 @@
++openai~=1.17.0
+diff --git a/slack.py b/slack.py
+new file mode 100644
+index 0000000..c057449
+--- /dev/null
++++ b/slack.py
+@@ -0,0 +1,46 @@
++import json
++from pathlib import Path
++
++
++def to_slack_json(post: str, post_file: Path, repo: str, base_repo: str):
++    return {
++        "text": post,
++        "blocks": [
++            {
++                "type": "header",
++                "text": {
++                    "type": "plain_text",
++                    "text": f"Daily Update for {repo}",
++                    "emoji": True
++                }
++            },
++            {
++                "type": "section",
++                "text": {
++                    "type": "mrkdwn",
++                    "text": post
++                }
++            },
++            {
++                "type": "divider"
++            },
++            {
++                "type": "actions",
++                "elements": [
++                    {
++                        "type": "button",
++                        "text": {
++                            "type": "plain_text",
++                            "text": "View on Github"
++                        },
++                        "url": f"{base_repo}{repo}/{post_file}"
++                    }
++                ]
++            }
++        ]
++    }
++
++
++def write_to_file(file_path, data):
++    with open(file_path, "w", encoding="utf-8") as file:
++        json.dump(data, file, ensure_ascii=False)
