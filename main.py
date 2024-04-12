@@ -1,3 +1,5 @@
+import re
+
 from openai import OpenAI
 
 from config import CONFIG
@@ -40,6 +42,14 @@ def get_prompt(init_data):
     )
 
 
+def clean_content(content):
+    # replace Markdown links with plain text links
+    link_regex = re.compile(r"\[([^]]+)]\(([^)]+)\)")
+    content = link_regex.sub(r"\2", content)
+
+    return content
+
+
 def main():
     init_data = init()
     prompt = get_prompt(init_data)
@@ -54,6 +64,7 @@ def main():
     )
 
     content = response.choices[0].message.content
+    content = clean_content(content)
     init_data["post"].write_text(content, encoding="utf-8")
 
     slack_json = to_slack_json(

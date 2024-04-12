@@ -34,6 +34,8 @@ Do not directly quote the git diff, write based on it. \
 In the first post include an explanation about the project based on the project description. \
 If this is not the first post, previous post will be included in the context, use that to maintain continuity.\
 The response created should be in plain text format so that it can be easily copied and pasted to LinkedIn post.\
+The response should not use any markdown, so to properly format the post you should use other text formatting like \
+➡️ for bullet points, etc.\
 """
 
 CONFIG = {
