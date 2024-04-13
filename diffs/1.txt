@@ -1,0 +1,151 @@
+diff --git a/ui/src/pages/layout.tsx b/ui/src/pages/layout.tsx
+index f18ceae..98db022 100644
+--- a/ui/src/pages/layout.tsx
++++ b/ui/src/pages/layout.tsx
+@@ -2,8 +2,9 @@ import {Route, Routes, useLocation, useNavigate} from "react-router-dom";
+ import {useAuthState} from "react-firebase-hooks/auth";
+ import {auth} from "../api/firebase";
+ import React, {useEffect, useState} from "react";
+-import {LeftPane, RightPane} from "./chat";
+-import {LeftPane_new, RightPane_new} from "./new_topic"
++
++import * as Chat from "./chat";
++import * as NewTopic from "./new_topic"
+ 
+ export default function BaseLayout() {
+     const navigate = useNavigate(); // Hook to programmatically navigate
+@@ -64,8 +65,8 @@ export default function BaseLayout() {
+                              style={{filter: 'brightness(0) invert(1)'}} className="h-12 w-32"/>
+                     </div>
+                     <Routes>
+-                        <Route path="/new/*" element={<LeftPane_new />}/>
+-                        <Route path="/*" element={<LeftPane setHeader={setHeader}/>}/>
++                        <Route path="/new/*" element={<NewTopic.LeftPane />}/>
++                        <Route path="/*" element={<Chat.LeftPane setHeader={setHeader}/>}/>
+                     </Routes>
+                     <div className="flex flex-grow"/>
+                     <div className="p-4 flex justify-center">
+@@ -100,8 +101,8 @@ export default function BaseLayout() {
+                         <h2 className="text-xl font-bold">{header}</h2>
+                     </div>
+                     <Routes>
+-                        <Route path="/chats/:chatId" element={<RightPane/>}/>
+-                        <Route path="/new/:userId" element={<RightPane_new/>}/>
++                        <Route path="/chats/:chatId" element={<Chat.RightPane/>}/>
++                        <Route path="/new/:userId" element={<NewTopic.RightPane/>}/>
+                     </Routes>
+                 </div>
+             }
+diff --git a/ui/src/pages/new_topic/LeftPane_new.tsx b/ui/src/pages/new_topic/LeftPane.tsx
+similarity index 95%
+rename from ui/src/pages/new_topic/LeftPane_new.tsx
+rename to ui/src/pages/new_topic/LeftPane.tsx
+index 73b4ed0..1b25397 100644
+--- a/ui/src/pages/new_topic/LeftPane_new.tsx
++++ b/ui/src/pages/new_topic/LeftPane.tsx
+@@ -6,11 +6,11 @@ import {useAuthState} from "react-firebase-hooks/auth";
+ import {auth} from "../../api/firebase";
+ 
+ 
+-export default function LeftPane_new( ) {
++export default function LeftPane( ) {
+     const [user] = useAuthState(auth);
+ 
+     const collectionMemo = useMemo(() =>
+-        collection(firestore, `submissions/${user?.uid}/topics`), []);
++        collection(firestore, `submissions/${user?.uid}/topics`), [user]);
+     const orderByMemo = useMemo(() =>
+         orderBy("timestamp", "desc"), []);
+ 
+diff --git a/ui/src/pages/new_topic/RightPane_new.tsx b/ui/src/pages/new_topic/RightPane.tsx
+similarity index 98%
+rename from ui/src/pages/new_topic/RightPane_new.tsx
+rename to ui/src/pages/new_topic/RightPane.tsx
+index 5f0ae94..7752e1b 100644
+--- a/ui/src/pages/new_topic/RightPane_new.tsx
++++ b/ui/src/pages/new_topic/RightPane.tsx
+@@ -9,7 +9,7 @@ interface IMessage {
+     timestamp?: Date;
+ }
+ 
+-export default function RightPane_new() {
++export default function RightPane() {
+     const [user] = useAuthState(auth);
+     const [message, setMessage] = useState("");
+     const [recentMessage, setRecentMessage] = useState<IMessage | null>(null);
+diff --git a/ui/src/pages/new_topic/index.tsx b/ui/src/pages/new_topic/index.tsx
+index 71c7c2e..f2d58c1 100644
+--- a/ui/src/pages/new_topic/index.tsx
++++ b/ui/src/pages/new_topic/index.tsx
+@@ -1,4 +1,4 @@
+-import LeftPane_new from './LeftPane_new';
+-import RightPane_new from './RightPane_new';
++import LeftPane from './LeftPane';
++import RightPane from './RightPane';
+ 
+-export {LeftPane_new, RightPane_new};
++export {LeftPane, RightPane};
+diff --git a/ui/src/pages/new_topic/texp.txt b/ui/src/pages/new_topic/texp.txt
+deleted file mode 100644
+index d3b73cf..0000000
+--- a/ui/src/pages/new_topic/texp.txt
++++ /dev/null
+@@ -1,58 +0,0 @@
+-import React, { useEffect, useState,useMemo } from "react";
+-import { collection, query, orderBy, getDocs } from "firebase/firestore";
+-import { firestore } from "../../api/firebase";
+-import { useAuthState } from "react-firebase-hooks/auth";
+-import { auth } from "../../api/firebase";
+-
+-
+-interface Topic {
+-    id: string;
+-    content: string;
+-    timestamp?: Date;
+-}
+-
+-export default function LeftPane_new( ) {
+-    const [user, loading, error] = useAuthState(auth);
+-    const [topics, setTopics] = useState<Topic[]>([]);
+-
+-    const topicsQuery = useMemo(() => {
+-        if (user) {
+-            return query(collection(firestore, `submissions/${user.uid}/topics`), orderBy("timestamp", "desc"));
+-        }
+-        return null;
+-    }, [user]);
+-
+-    useEffect(() => {
+-        const fetchTopics = async () => {
+-            if (topicsQuery) {
+-                const querySnapshot = await getDocs(topicsQuery);
+-                const fetchedTopics = querySnapshot.docs.map(doc => ({
+-                    id: doc.id,
+-                    ...doc.data()
+-                }));
+-                setTopics(fetchedTopics as Topic[]);
+-            }
+-        };
+-
+-        if (!loading && !error && topicsQuery) {
+-            fetchTopics();
+-        }
+-    }, [topicsQuery, loading, error]);
+-
+-    if (loading) {
+-        return <div>Loading...</div>;
+-    }
+-
+-    if (error) {
+-        return <div>Error: {error.message}</div>;
+-    }
+-    return (
+-        <div>
+-            {topics.map((topic) => (
+-                <div className="p-4 cursor-pointer hover:bg-gray-200">
+-                    <p className="font-semibold">{topic.content}</p>
+-                </div>
+-            ))}
+-        </div>
+-    );
+-}
