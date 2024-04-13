@@ -1,0 +1,183 @@
+diff --git a/.github/workflows/run-python.yml b/.github/workflows/run-python.yml
+index 28ee4f2..0674b1b 100644
+--- a/.github/workflows/run-python.yml
++++ b/.github/workflows/run-python.yml
+@@ -43,10 +43,7 @@ jobs:
+         env:
+           CURRENT_REPO_URL: "${{ github.server_url }}/${{ github.repository }}/blob/"
+           OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
+-
+-      - name: Notify Slack
+-        run: |
+-          curl -X POST -H 'Content-type: application/json' -d @slack.json ${{ secrets.SLACK_WEBHOOK_URL }}
++          TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID }}
+ 
+       - name: Commit and push changes
+         run: |
+@@ -55,3 +52,17 @@ jobs:
+           git add .
+           git commit -m "Created Post"
+           git push 
++
++      - name: Notify Slack
++        if: env.WEBHOOK_URL
++        run: |
++          curl -X POST -H 'Content-type: application/json' -d @slack.json ${{ secrets.SLACK_WEBHOOK_URL }}
++        env:
++          WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
++
++      - name: Notify Telegram
++        if: env.BOT_TOKEN
++        run: |
++          curl -X POST -H 'Content-type: application/json' -d @telegram.json https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage
++        env:
++          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+diff --git a/.github/workflows/update-branches.yml b/.github/workflows/update-branches.yml
+new file mode 100644
+index 0000000..0987878
+--- /dev/null
++++ b/.github/workflows/update-branches.yml
+@@ -0,0 +1,35 @@
++name: Update Branches
++
++on:
++  push:
++    branches:
++      - main
++
++permissions:
++  contents: write
++
++jobs:
++  update-branches:
++    runs-on: ubuntu-latest
++
++    steps:
++      - name: Checkout repository
++        uses: actions/checkout@v4
++        with:
++          fetch-depth: 0
++
++      - name: Get branch names
++        id: branches
++        run: |
++          git ls-remote --heads origin | awk -F'refs/heads/' '{print $2}' | grep -vE '^(main|legacy)$' > ${{ github.workspace }}/branches.txt
++
++      - name: Update branches
++        run: |
++          git config user.name github-actions
++          git config user.email github-actions@github.com
++          
++          while read -r branch; do
++            git checkout $branch
++            git merge origin/main --no-edit
++            git push origin $branch
++          done < ${{ github.workspace }}/branches.txt
+diff --git a/config.py b/config.py
+index 7b4c8c1..b0b0fb7 100644
+--- a/config.py
++++ b/config.py
+@@ -34,6 +34,8 @@ Do not directly quote the git diff, write based on it. \
+ In the first post include an explanation about the project based on the project description. \
+ If this is not the first post, previous post will be included in the context, use that to maintain continuity.\
+ The response created should be in plain text format so that it can be easily copied and pasted to LinkedIn post.\
++The response should not use any markdown, so to properly format the post you should use other text formatting like \
++➡️ for bullet points, etc.\
+ """
+ 
+ CONFIG = {
+@@ -41,11 +43,13 @@ CONFIG = {
+     "diffs_folder": Path("diffs"),
+     "repo": json.load(open("repo.json", "r")),
+     "slack_file": "slack.json",
++    "telegram_file": "telegram.json",
+     "first_post_template": FIRST_POST_TEMPLATE,
+     "next_post_template": NEXT_POST_TEMPLATE,
+     "prompt_template": PROMPT_TEMPLATE,
+     "system_message": SYSTEM_MESSAGE,
+     "base_repo_url": os.environ["CURRENT_REPO_URL"],
+     "open_ai_key": os.environ["OPEN_AI_API_KEY"],
+-    "openai_model": os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
++    "openai_model": os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
++    "telegram_chat_id": os.getenv("TELEGRAM_CHAT_ID")
+ }
+diff --git a/main.py b/main.py
+index 0647519..52fe687 100644
+--- a/main.py
++++ b/main.py
+@@ -1,7 +1,10 @@
++import re
++
+ from openai import OpenAI
+ 
+ from config import CONFIG
+ from slack import to_slack_json, write_to_file
++from telegram import to_telegram_json
+ 
+ 
+ def init():
+@@ -39,6 +42,14 @@ def get_prompt(init_data):
+     )
+ 
+ 
++def clean_content(content):
++    # replace Markdown links with plain text links
++    link_regex = re.compile(r"\[([^]]+)]\(([^)]+)\)")
++    content = link_regex.sub(r"\2", content)
++
++    return content
++
++
+ def main():
+     init_data = init()
+     prompt = get_prompt(init_data)
+@@ -53,6 +64,7 @@ def main():
+     )
+ 
+     content = response.choices[0].message.content
++    content = clean_content(content)
+     init_data["post"].write_text(content, encoding="utf-8")
+ 
+     slack_json = to_slack_json(
+@@ -62,7 +74,16 @@ def main():
+         CONFIG["base_repo_url"]
+     )
+ 
++    telegram_json = to_telegram_json(
++        content,
++        init_data["post"],
++        CONFIG["repo"]["full_name"],
++        CONFIG["base_repo_url"],
++        CONFIG["telegram_chat_id"]
++    )
++
+     write_to_file(CONFIG["slack_file"], slack_json)
++    write_to_file(CONFIG["telegram_file"], telegram_json)
+ 
+ 
+ if __name__ == "__main__":
+diff --git a/telegram.py b/telegram.py
+new file mode 100644
+index 0000000..8fc778d
+--- /dev/null
++++ b/telegram.py
+@@ -0,0 +1,19 @@
++from pathlib import Path
++
++
++def to_telegram_json(post: str, post_file: Path, repo: str, base_repo: str, chat_id: str):
++    return {
++        "chat_id": chat_id,
++        "text": post,
++        "parse_mode": "Markdown",
++        "reply_markup": {
++            "inline_keyboard": [
++                [
++                    {
++                        "text": "View on GitHub",
++                        "url": f"{base_repo}{repo}/{post_file}"
++                    }
++                ]
++            ]
++        }
++    }
