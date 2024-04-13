@@ -44,6 +44,7 @@ jobs:
           CURRENT_REPO_URL: "${{ github.server_url }}/${{ github.repository }}/blob/"
           OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
           TELEGRAM_CHAT_ID: ${{ vars.TELEGRAM_CHAT_ID }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
 
       - name: Commit and push changes
         run: |
