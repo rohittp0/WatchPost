@@ -153,8 +153,6 @@ diff --git a/docs/images/action-variables.png b/docs/images/action-variables.png
 new file mode 100644
 index 0000000..4002777
 Binary files /dev/null and b/docs/images/action-variables.png differ
-
-
 diff --git a/docs/images/fork.png b/docs/images/fork.png
 new file mode 100644
 index 0000000..57977c0
