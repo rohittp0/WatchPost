@@ -38,6 +38,16 @@ The response should not use any markdown, so to properly format the post you sho
 ➡️ for bullet points, etc.\
 """
 
+
+def get_model():
+    model = os.getenv("OPENAI_MODEL") or " "
+
+    if model.startswith("gpt-"):
+        return model
+
+    return "gpt-3.5-turbo"
+
+
 CONFIG = {
     "posts_folder": Path("posts"),
     "diffs_folder": Path("diffs"),

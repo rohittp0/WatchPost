@@ -66,6 +66,7 @@ jobs:
           echo "FIRST_COMMIT=$FIRST_COMMIT" >> $GITHUB_ENV
 
       - name: Get Git Diff
+        if: steps.find-commit.outputs.FIRST_COMMIT
         run: |
           cd guest
           DIFF_INDEX=$(ls ../host/diffs -l | wc -l)
@@ -77,6 +78,7 @@ jobs:
         shell: /usr/bin/bash -e {0}
 
       - name: Commit and Push Changes
+        if: steps.find-commit.outputs.FIRST_COMMIT
         run: |
           cd host
           git config user.name github-actions
