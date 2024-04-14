@@ -60,6 +60,6 @@ CONFIG = {
     "system_message": SYSTEM_MESSAGE,
     "base_repo_url": os.environ["CURRENT_REPO_URL"],
     "open_ai_key": os.environ["OPEN_AI_API_KEY"],
-    "openai_model": os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
+    "openai_model": get_model(),
     "telegram_chat_id": os.getenv("TELEGRAM_CHAT_ID")
 }
