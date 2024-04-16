@@ -55,7 +55,6 @@ jobs:
         run: curl -sSL -X GET "https://api.github.com/repos/${{ matrix.repo }}" > host/repo.json
 
       - name: Find First Commit in Last 24 Hours
-        id: find-commit
         run: |
           cd guest
           FIRST_COMMIT=$(git rev-list --since="1 day ago" HEAD | tail -n 1)
@@ -66,7 +65,7 @@ jobs:
           echo "FIRST_COMMIT=$FIRST_COMMIT" >> $GITHUB_ENV
 
       - name: Get Git Diff
-        if: steps.find-commit.outputs.FIRST_COMMIT
+        if: env.FIRST_COMMIT
         run: |
           cd guest
           DIFF_INDEX=$(ls ../host/diffs -l | wc -l)
@@ -76,9 +75,11 @@ jobs:
             git show "${FIRST_COMMIT}" > ../host/diffs/${DIFF_INDEX}.txt
           fi
         shell: /usr/bin/bash -e {0}
+        env:
+          FIRST_COMMIT: ${{ env.FIRST_COMMIT }}
 
       - name: Commit and Push Changes
-        if: steps.find-commit.outputs.FIRST_COMMIT
+        if: env.FIRST_COMMIT
         run: |
           cd host
           git config user.name github-actions
@@ -87,3 +88,5 @@ jobs:
           git commit -m "Update diffs for ${{ matrix.repo }} at $(date)"
           git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}
           git push -u origin ${{ matrix.repo }}
+        env:
+          FIRST_COMMIT: ${{ env.FIRST_COMMIT }}
