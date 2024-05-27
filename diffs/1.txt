@@ -1,0 +1,152 @@
+commit 512c04eb637d9d4a59176cfd15a4f5bd3de0f079
+Author: rohittp <tprohit9@gmail.com>
+Date:   Sun May 26 17:33:41 2024 +0530
+
+    Initial commit
+
+diff --git a/github.png b/github.png
+new file mode 100644
+index 0000000..9490ffc
+Binary files /dev/null and b/github.png differ
+diff --git a/index.html b/index.html
+new file mode 100644
+index 0000000..393a56c
+--- /dev/null
++++ b/index.html
+@@ -0,0 +1,136 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Screen Recording</title>
++
++    <style>
++        .centering {
++            display: flex;
++            flex-direction: column;
++            justify-content: center;
++            align-items: center;
++            height: 100vh;
++            margin: 0;
++            font-family: Arial, sans-serif;
++            text-align: center;
++        }
++
++        button {
++            padding: 10px 20px;
++            font-size: 16px;
++            margin: 10px;
++            border: none;
++            border-radius: 5px;
++            cursor: pointer;
++            transition: background-color 0.3s ease;
++        }
++
++        #startBtn {
++            background-color: #28a745;
++            color: white;
++        }
++
++        #stopBtn {
++            background-color: #dc3545;
++            color: white;
++        }
++
++        button:hover {
++            opacity: 0.8;
++        }
++
++        #timer {
++            margin-top: 20px;
++            font-size: 18px;
++        }
++
++        #description {
++            max-width: 600px;
++            margin-bottom: 20px;
++            font-size: 16px;
++            text-align: start;
++        }
++
++        .github {
++            font-family: sans-serif;
++            font-size: 18px;
++            gap: 0.5rem;
++            display: flex;
++            align-items: center;
++            text-decoration: none;
++            color: black;
++        }
++    </style>
++</head>
++<body>
++<div>
++    <a href="https://github.com/rohittp0/WebRec" target="_blank" class="github">
++        <img src="github.png" alt="GitHub" width="30">
++        Code on GitHub
++    </a>
++</div>
++<div class="centering">
++    <h3>WebRec</h3>
++    <div id="description">
++        Fully local screen recording in the browser. Just hit the "Start Recording" button and download the recording when you're done.
++    </div>
++    <button id="startBtn">Start Recording</button>
++    <button id="stopBtn" style="display: none;">Stop Recording</button>
++    <div id="timer">Recording Time: 00:00</div>
++</div>
++<script>
++  let mediaRecorder;
++  let recordedChunks = [];
++  let startTime;
++  let timerInterval;
++
++  document.getElementById('startBtn').addEventListener('click', async () => {
++    const stream = await navigator.mediaDevices.getDisplayMedia({video: true});
++    mediaRecorder = new MediaRecorder(stream, {mimeType: 'video/webm'});
++
++    mediaRecorder.ondataavailable = event => {
++      if (event.data.size > 0) {
++        recordedChunks.push(event.data);
++      }
++    };
++
++    mediaRecorder.onstop = () => {
++      mediaRecorder.stream.getVideoTracks().forEach(track => track.stop());
++      clearInterval(timerInterval);
++
++      const blob = new Blob(recordedChunks, {type: 'video/webm'});
++      const url = URL.createObjectURL(blob);
++      const downloadLink = document.createElement('a');
++
++      downloadLink.href = url;
++      downloadLink.download = 'recording.webm';
++      document.body.appendChild(downloadLink);
++      downloadLink.click();
++      downloadLink.remove();
++    };
++
++    mediaRecorder.start();
++    startTime = Date.now();
++    timerInterval = setInterval(updateTimer, 1000);
++
++    document.getElementById('startBtn').style.display = 'none';
++    document.getElementById('stopBtn').style.display = 'block';
++  });
++
++  document.getElementById('stopBtn').addEventListener('click', () => {
++    mediaRecorder.stop();
++    document.getElementById('startBtn').style.display = 'block';
++    document.getElementById('stopBtn').style.display = 'none';
++  });
++
++  function updateTimer() {
++    const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
++    const minutes = String(Math.floor(elapsedTime / 60)).padStart(2, '0');
++    const seconds = String(elapsedTime % 60).padStart(2, '0');
++    document.getElementById('timer').textContent = `Recording Time: ${minutes}:${seconds}`;
++  }
++</script>
++</body>
++</html>
