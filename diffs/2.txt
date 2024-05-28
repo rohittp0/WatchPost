@@ -1,0 +1,358 @@
+diff --git a/css/index.css b/css/index.css
+new file mode 100644
+index 0000000..a6f30a6
+--- /dev/null
++++ b/css/index.css
+@@ -0,0 +1,77 @@
++body {
++    margin: 0;
++    padding: 0;
++}
++
++.header {
++    padding: 8px 0 0 8px;
++}
++
++.centering {
++    display: flex;
++    flex-direction: column;
++    justify-content: center;
++    align-items: center;
++    height: calc(100vh - 38px);
++    margin: 0;
++    font-family: Arial, sans-serif;
++    text-align: center;
++}
++
++.logo {
++    display: flex;
++    align-items: center;
++    gap: 0.5rem;
++    margin-bottom: 1rem;
++}
++
++.logo img {
++    border-radius: 50%;
++    outline: #b6cde0 4px solid;
++}
++
++button {
++    padding: 10px 20px;
++    font-size: 16px;
++    margin: 10px;
++    border: none;
++    border-radius: 5px;
++    cursor: pointer;
++    transition: background-color 0.3s ease;
++}
++
++#startBtn {
++    background-color: #28a745;
++    color: white;
++}
++
++#stopBtn {
++    background-color: #dc3545;
++    color: white;
++}
++
++button:hover {
++    opacity: 0.8;
++}
++
++#timer {
++    margin-top: 20px;
++    font-size: 18px;
++}
++
++#description {
++    max-width: 600px;
++    margin-bottom: 20px;
++    font-size: 16px;
++    text-align: start;
++}
++
++.github {
++    font-family: sans-serif;
++    font-size: 18px;
++    gap: 0.5rem;
++    display: flex;
++    align-items: center;
++    text-decoration: none;
++    color: black;
++}
+diff --git a/favicon/android-chrome-192x192.png b/favicon/android-chrome-192x192.png
+new file mode 100644
+index 0000000..8d6331d
+Binary files /dev/null and b/favicon/android-chrome-192x192.png differ
+diff --git a/favicon/android-chrome-512x512.png b/favicon/android-chrome-512x512.png
+new file mode 100644
+index 0000000..0b1004d
+Binary files /dev/null and b/favicon/android-chrome-512x512.png differ
+diff --git a/favicon/apple-touch-icon.png b/favicon/apple-touch-icon.png
+new file mode 100644
+index 0000000..5294ced
+Binary files /dev/null and b/favicon/apple-touch-icon.png differ
+diff --git a/favicon/favicon-16x16.png b/favicon/favicon-16x16.png
+new file mode 100644
+index 0000000..f94424f
+Binary files /dev/null and b/favicon/favicon-16x16.png differ
+diff --git a/favicon/favicon-32x32.png b/favicon/favicon-32x32.png
+new file mode 100644
+index 0000000..1fb2705
+Binary files /dev/null and b/favicon/favicon-32x32.png differ
+diff --git a/favicon/favicon.ico b/favicon/favicon.ico
+new file mode 100644
+index 0000000..335d564
+Binary files /dev/null and b/favicon/favicon.ico differ
+diff --git a/github.webp b/img/github.webp
+similarity index 100%
+rename from github.webp
+rename to img/github.webp
+diff --git a/img/logo.webp b/img/logo.webp
+new file mode 100644
+index 0000000..e3c10fa
+Binary files /dev/null and b/img/logo.webp differ
+diff --git a/index.html b/index.html
+index d14af5d..458b72e 100644
+--- a/index.html
++++ b/index.html
+@@ -3,134 +3,58 @@
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <title>Screen Recording</title>
+ 
+-    <style>
+-        .centering {
+-            display: flex;
+-            flex-direction: column;
+-            justify-content: center;
+-            align-items: center;
+-            height: 100vh;
+-            margin: 0;
+-            font-family: Arial, sans-serif;
+-            text-align: center;
+-        }
+-
+-        button {
+-            padding: 10px 20px;
+-            font-size: 16px;
+-            margin: 10px;
+-            border: none;
+-            border-radius: 5px;
+-            cursor: pointer;
+-            transition: background-color 0.3s ease;
+-        }
+-
+-        #startBtn {
+-            background-color: #28a745;
+-            color: white;
+-        }
+-
+-        #stopBtn {
+-            background-color: #dc3545;
+-            color: white;
+-        }
+-
+-        button:hover {
+-            opacity: 0.8;
+-        }
+-
+-        #timer {
+-            margin-top: 20px;
+-            font-size: 18px;
+-        }
+-
+-        #description {
+-            max-width: 600px;
+-            margin-bottom: 20px;
+-            font-size: 16px;
+-            text-align: start;
+-        }
+-
+-        .github {
+-            font-family: sans-serif;
+-            font-size: 18px;
+-            gap: 0.5rem;
+-            display: flex;
+-            align-items: center;
+-            text-decoration: none;
+-            color: black;
+-        }
+-    </style>
++    <!-- Primary Meta Tags -->
++    <title>WebRec</title>
++    <meta name="title" content="WebRec"/>
++    <meta name="description" content="WebApp that captures your screen, running fully locally on your browser"/>
++
++    <!-- Open Graph / Facebook -->
++    <meta property="og:type" content="website"/>
++    <meta property="og:url" content="https://rohittp.com/WebRec/"/>
++    <meta property="og:title" content="WebRec"/>
++    <meta property="og:description" content="WebApp that captures your screen, running fully locally on your browser"/>
++    <meta property="og:image" content="https://rohittp.com/WebRec/favicon/android-chrome-512x512.png"/>
++
++    <!-- Twitter -->
++    <meta property="twitter:card" content="summary_large_image"/>
++    <meta property="twitter:url" content="https://rohittp.com/WebRec/"/>
++    <meta property="twitter:title" content="WebRec"/>
++    <meta property="twitter:description"
++          content="WebApp that captures your screen, running fully locally on your browser"/>
++    <meta property="twitter:image" content="https://rohittp.com/WebRec/favicon/android-chrome-512x512.png"/>
++
++    <!-- Meta Tags Generated with https://metatags.io -->
++
++    <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
++    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
++    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
++    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
++    <link rel="manifest" href="site.webmanifest">
++
++    <link rel="stylesheet" href="css/index.css">
++
++    <script src="js/index.js" defer></script>
+ </head>
+ <body>
+-<div>
++<div class="header">
+     <a href="https://github.com/rohittp0/WebRec" target="_blank" class="github">
+-        <img src="github.webp" alt="GitHub" width="30">
++        <img src="img/github.webp" alt="GitHub" width="30">
+         Code on GitHub
+     </a>
+ </div>
+ <div class="centering">
+-    <h3>WebRec</h3>
++    <div class="logo">
++        <img src="img/logo.webp" alt="GitHub" width="64">
++        <h1>WebRec</h1>
++    </div>
+     <div id="description">
+-        Fully local screen recording in the browser. Just hit the "Start Recording" button and download the recording when you're done.
++        Fully local screen recording in the browser. Just hit the "Start Recording" button and download the recording
++        when you're done.
+     </div>
+     <button id="startBtn">Start Recording</button>
+     <button id="stopBtn" style="display: none;">Stop Recording</button>
+     <div id="timer">Recording Time: 00:00</div>
+ </div>
+-<script>
+-  let mediaRecorder;
+-  let recordedChunks = [];
+-  let startTime;
+-  let timerInterval;
+-
+-  document.getElementById('startBtn').addEventListener('click', async () => {
+-    const stream = await navigator.mediaDevices.getDisplayMedia({video: true});
+-    mediaRecorder = new MediaRecorder(stream, {mimeType: 'video/webm'});
+-
+-    mediaRecorder.ondataavailable = event => {
+-      if (event.data.size > 0) {
+-        recordedChunks.push(event.data);
+-      }
+-    };
+-
+-    mediaRecorder.onstop = () => {
+-      mediaRecorder.stream.getVideoTracks().forEach(track => track.stop());
+-      clearInterval(timerInterval);
+-
+-      const blob = new Blob(recordedChunks, {type: 'video/webm'});
+-      const url = URL.createObjectURL(blob);
+-      const downloadLink = document.createElement('a');
+-
+-      downloadLink.href = url;
+-      downloadLink.download = 'recording.webm';
+-      document.body.appendChild(downloadLink);
+-      downloadLink.click();
+-      downloadLink.remove();
+-    };
+-
+-    mediaRecorder.start();
+-    startTime = Date.now();
+-    timerInterval = setInterval(updateTimer, 1000);
+-
+-    document.getElementById('startBtn').style.display = 'none';
+-    document.getElementById('stopBtn').style.display = 'block';
+-  });
+-
+-  document.getElementById('stopBtn').addEventListener('click', () => {
+-    mediaRecorder.stop();
+-    document.getElementById('startBtn').style.display = 'block';
+-    document.getElementById('stopBtn').style.display = 'none';
+-  });
+-
+-  function updateTimer() {
+-    const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+-    const minutes = String(Math.floor(elapsedTime / 60)).padStart(2, '0');
+-    const seconds = String(elapsedTime % 60).padStart(2, '0');
+-    document.getElementById('timer').textContent = `Recording Time: ${minutes}:${seconds}`;
+-  }
+-</script>
+ </body>
+ </html>
+diff --git a/js/index.js b/js/index.js
+new file mode 100644
+index 0000000..6327a0b
+--- /dev/null
++++ b/js/index.js
+@@ -0,0 +1,52 @@
++let mediaRecorder;
++let recordedChunks = [];
++let startTime;
++let timerInterval;
++
++document.getElementById('startBtn').addEventListener('click', async () => {
++  const stream = await navigator.mediaDevices.getDisplayMedia({video: true});
++  mediaRecorder = new MediaRecorder(stream, {mimeType: 'video/webm'});
++
++  mediaRecorder.ondataavailable = event => {
++    if (event.data.size > 0) {
++      recordedChunks.push(event.data);
++    }
++  };
++
++  mediaRecorder.onstop = () => {
++    mediaRecorder.stream.getVideoTracks().forEach(track => track.stop());
++    clearInterval(timerInterval);
++
++    const blob = new Blob(recordedChunks, {type: 'video/webm'});
++    const url = URL.createObjectURL(blob);
++    const downloadLink = document.createElement('a');
++
++    const timestamp = new Date().toLocaleDateString();
++
++    downloadLink.href = url;
++    downloadLink.download = `recording-${timestamp}.webm`
++    document.body.appendChild(downloadLink);
++    downloadLink.click();
++    downloadLink.remove();
++  };
++
++  mediaRecorder.start();
++  startTime = Date.now();
++  timerInterval = setInterval(updateTimer, 1000);
++
++  document.getElementById('startBtn').style.display = 'none';
++  document.getElementById('stopBtn').style.display = 'block';
++});
++
++document.getElementById('stopBtn').addEventListener('click', () => {
++  mediaRecorder.stop();
++  document.getElementById('startBtn').style.display = 'block';
++  document.getElementById('stopBtn').style.display = 'none';
++});
++
++function updateTimer() {
++  const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
++  const minutes = String(Math.floor(elapsedTime / 60)).padStart(2, '0');
++  const seconds = String(elapsedTime % 60).padStart(2, '0');
++  document.getElementById('timer').textContent = `Recording Time: ${minutes}:${seconds}`;
++}
+diff --git a/site.webmanifest b/site.webmanifest
+new file mode 100644
+index 0000000..2825a36
+--- /dev/null
++++ b/site.webmanifest
+@@ -0,0 +1 @@
++{"name":"","short_name":"","icons":[{"src":"/favicon/android-chrome-192x192.png","sizes":"192x192","type":"image/png"},{"src":"/favicon/android-chrome-512x512.png","sizes":"512x512","type":"image/png"}],"theme_color":"#ffffff","background_color":"#ffffff","display":"standalone"}
